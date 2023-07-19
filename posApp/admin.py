@@ -1,5 +1,5 @@
 from django.contrib import admin
-from staffapp.models import Category, Products, Sales, salesItems
+from posApp.models import Category, Products, Sales, salesItems
 
 # Register your models here.
 admin.site.register(Category)
