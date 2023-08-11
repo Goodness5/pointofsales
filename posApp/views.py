@@ -161,30 +161,52 @@ def test(request):
     return render(request, 'posApp/test.html',context)
 @login_required
 def save_product(request):
-    data =  request.POST
-    resp = {'status':'failed'}
-    id= ''
+    data = request.POST
+    resp = {'status': 'failed'}
+    id = ''
+    
     if 'id' in data:
         id = data['id']
+    
     if id.isnumeric() and int(id) > 0:
-        check = Products.objects.exclude(id=id).filter(code=data['code']).all()
+        check = Products.objects.exclude(id=id).filter(name=data['name']).all()
     else:
-        check = Products.objects.filter(code=data['code']).all()
-    if len(check) > 0 :
-        resp['msg'] = "Product Code Already Exists in the database"
+        check = Products.objects.filter(name=data['name']).all()
+    
+    if check:
+        resp['msg'] = "Product with that name Already Exists in the database"
     else:
-        category = Category.objects.filter(id = data['category_id']).first()
+        category = Category.objects.filter(id=data['category_id']).first()
+        
         try:
-            if (data['id']).isnumeric() and int(data['id']) > 0 :
-                save_product = Products.objects.filter(id = data['id']).update(code=data['code'], category_id=category, name=data['name'], description = data['description'], price = float(data['price']),status = data['status'])
+            if id.isnumeric() and int(id) > 0:
+                save_product = Products.objects.filter(id=id).update(
+                    category_id=category, 
+                    name=data['name'], 
+                    description=data['description'], 
+                    price=float(data['price']), 
+                    status=data['status']
+                )
             else:
-                save_product = Products(code=data['code'], category_id=category, name=data['name'], description = data['description'], price = float(data['price']),status = data['status'])
+                save_product = Products(
+                    category_id=category, 
+                    name=data['name'], 
+                    description=data['description'], 
+                    price=float(data['price']), 
+                    status=data['status']
+                )
                 save_product.save()
+                print('error')  # This should be printed if the else block is executed
+                
             resp['status'] = 'success'
+            print('success')  # This should also be printed if the try block is executed
             messages.success(request, 'Product Successfully saved.')
-        except:
+        except Exception as e:
+            print('Exception:', e)  # Print any exceptions for debugging
             resp['status'] = 'failed'
+            
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
 
 @login_required
 def delete_product(request):
@@ -223,39 +245,73 @@ def checkout_modal(request):
 
 @login_required
 def save_pos(request):
-    resp = {'status':'failed','msg':''}
+    resp = {'status': 'failed', 'msg': ''}
     data = request.POST
+    print(data)
     pref = datetime.now().year + datetime.now().year
     i = 1
     while True:
         code = '{:0>5}'.format(i)
         i += int(1)
-        check = Sales.objects.filter(code = str(pref) + str(code)).all()
+        check = Sales.objects.filter(code=str(pref) + str(code)).all()
         if len(check) <= 0:
             break
     code = str(pref) + str(code)
 
     try:
-        sales = Sales(code=code, sub_total = data['sub_total'], tax = data['tax'], tax_amount = data['tax_amount'], grand_total = data['grand_total'], tendered_amount = data['tendered_amount'], amount_change = data['amount_change']).save()
-        sale_id = Sales.objects.last().pk
+        payment_mode = data.get('payment_mode')
+        print(payment_mode)
+        tendered_amount = float(data.get('tendered_amount', 0))
+
+        sales = Sales(
+            code=code,
+            sub_total=data['sub_total'],
+            tax=data['tax'],
+            tax_amount=data['tax_amount'],
+            grand_total=data['grand_total'],
+            payment_mode=payment_mode,
+            tendered_amount=tendered_amount,
+        )
+
+        if payment_mode == 'cash':
+            amount_change = tendered_amount - float(data['grand_total'])
+            sales.amount_change = amount_change
+        else:
+            sales.amount_change = 0
+
+        sales.save()
+        sale_id = sales.pk
+
         i = 0
         for prod in data.getlist('product_id[]'):
-            product_id = prod 
+            product_id = prod
             sale = Sales.objects.filter(id=sale_id).first()
             product = Products.objects.filter(id=product_id).first()
-            qty = data.getlist('qty[]')[i] 
-            price = data.getlist('price[]')[i] 
+            qty = data.getlist('qty[]')[i]
+            price = data.getlist('price[]')[i]
             total = float(qty) * float(price)
-            print({'sale_id' : sale, 'product_id' : product, 'qty' : qty, 'price' : price, 'total' : total})
-            salesItems(sale_id = sale, product_id = product, qty = qty, price = price, total = total).save()
+
+            sales_item = salesItems(
+                sale_id=sale,
+                product_id=product,
+                qty=qty,
+                price=price,
+                total=total,
+            )
+            sales_item.save()
             i += int(1)
+        
         resp['status'] = 'success'
         resp['sale_id'] = sale_id
         messages.success(request, "Sale Record has been saved.")
-    except:
-        resp['msg'] = "An error occured"
-        print("Unexpected error:", sys.exc_info()[0])
-    return HttpResponse(json.dumps(resp),content_type="application/json")
+    except Exception as e:
+        resp['msg'] = "An error occurred: " + str(e)
+        print("Unexpected error:", str(e))
+    
+    return HttpResponse(json.dumps(resp), content_type="application/json")
+
+
+
 
 @login_required
 def salesList(request):
@@ -295,6 +351,7 @@ def receipt(request):
         "transaction" : transaction,
         "salesItems" : ItemList
     }
+    print(transaction)
 
     return render(request, 'posApp/receipt.html',context)
     # return HttpResponse('')

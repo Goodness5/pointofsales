@@ -36,7 +36,7 @@ class Category(models.Model):
         return self.name
 
 class Products(models.Model):
-    code = models.CharField(max_length=100)
+    # code = models.CharField(max_length=100)
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.TextField()
     description = models.TextField()
@@ -46,21 +46,29 @@ class Products(models.Model):
     date_updated = models.DateTimeField(auto_now=True) 
 
     def __str__(self):
-        return self.code + " - " + self.name
+        return self.name
 
 class Sales(models.Model):
+    PAYMENT_MODE_CHOICES = [
+        ('transfer', 'Transfer'),
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+    ]
+
     code = models.CharField(max_length=100)
     sub_total = models.FloatField(default=0)
     grand_total = models.FloatField(default=0)
     tax_amount = models.FloatField(default=0)
     tax = models.FloatField(default=0)
-    tendered_amount = models.FloatField(default=0)
     amount_change = models.FloatField(default=0)
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES)
     date_added = models.DateTimeField(default=timezone.now) 
+    tendered_amount = models.FloatField(default=0)
     date_updated = models.DateTimeField(auto_now=True) 
 
     def __str__(self):
-        return self.code
+        return f"Sales Object (Code: {self.code}, Subtotal: {self.sub_total}, Grand Total: {self.grand_total})"
+
 
 class salesItems(models.Model):
     sale_id = models.ForeignKey(Sales,on_delete=models.CASCADE)

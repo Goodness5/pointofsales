@@ -34,7 +34,7 @@
                     <tr>
                         <td class="px-2 py-1 text-center">{{ sale.id }}</td>
                         <td class="px-2 py-1 text-start">{{ sale.date_added|date:'Y-m-d H:i' }}</td>
-                        <td class="px-2 py-1 text-start">{{ sale.code }}</td>
+                        
                         <td class="px-2 py-1 text-end">{{ sale.grand_total|intcomma }}</td>
                         <td class="px-2 py-1 text-end">({{ sale.tax }}%) {{ sale.tax_amount|intcomma:2 }}</td>
                         <td class="px-2 py-1 text-center">{{ sale.item_count|intcomma }}</td>

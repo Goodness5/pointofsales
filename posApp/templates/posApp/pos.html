@@ -18,7 +18,7 @@
                             <select id="product-id" class="form-select form-select-sm">
                                 <option value="" disabled selected></option>
                                 {% for product in products %}
-                                    <option value="{{ product.pk }}">{{ product }}</option>
+                                    <option value="{{ product.id }}">{{ product.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -94,6 +94,8 @@
             </fieldset>
             <div class="row">
                 <div class="col-md-12 text-end">
+                    
+                <div class="col-md-12 text-end">
                     <button class="btn btn-primary btn-sm rounded-0" type="button" id="check_out"><i class="mdi mdi-save"></i> Checkout</button>
                 </div>
             </div>
@@ -108,6 +110,7 @@
         <td class="px-2 py-1">
             <input type="hidden" name="product_id[]">
             <input type="hidden" name="price[]">
+            
             <input type="number" name="qty[]" min="0" class="form-control form-control-sm rounded-0 text-center">
         </td>
         <td class="px-2 py-1 product_name text-start"></td>
@@ -200,11 +203,15 @@
         })
         $('#check_out').click(function() {
             if ($('#POS-field table tbody tr').length <= 0) {
-                alert("Add atleast 1 product first!")
+                alert("Add at least 1 product first!")
+                var payment_mode = $('#payment_mode').val();  
+                
                 return false;
             }
-            uni_modal("Checkout", "{% url 'checkout-modal' %}?grand_total=" + $('[name="grand_total"]').val())
-        })
+            
+           
+            uni_modal("Checkout", "{% url 'checkout-modal' %}?grand_total=" + $('[name="grand_total"]').val());
+        });
         $('#pos-form').submit(function(e) {
             e.preventDefault();
             var _this = $(this)
@@ -212,6 +219,9 @@
             var el = $('<div>')
             el.addClass("alert alert-danger err-msg")
             el.hide()
+             
+
+    
             if (_this[0].checkValidity() == false) {
                 _this[0].reportValidity();
                 return false;

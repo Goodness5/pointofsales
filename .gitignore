@@ -1,2 +1,7 @@
 env/
 .env
+manage.spec
+web3bridge.spec
+pointofsales/__pycache__
+posApp/__pycache__
+posApp/migrations
